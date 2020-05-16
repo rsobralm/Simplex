@@ -1,6 +1,7 @@
 #include <iostream>
 #include <vector>
 #include <limits>
+#define EPSILON 0.0001
 
 using namespace std;
 
@@ -8,13 +9,13 @@ class Simplex{
 
     private:
         //int rows, cols;
-        vector <vector<float>> A;
-        vector<float> B;
-        vector<float> C;
+        vector <vector<long double>> A;
+        vector<long double> B;
+        vector<long double> C;
         //bool optimum = false;
     public:
         int rows, cols;
-        Simplex(vector <vector<float>> a, vector<float> b);
+        Simplex(vector <vector<long double>> a, vector<long double> b);
         bool optimum = false;
         void checkOpt();
         int col_pivot();
@@ -25,7 +26,7 @@ class Simplex{
         void print(); 
 };
 
-Simplex::Simplex(vector <vector<float>> a, vector<float> b){
+Simplex::Simplex(vector <vector<long double>> a, vector<long double> b){
     A = a;
     B = b;
 
@@ -42,10 +43,11 @@ void Simplex::checkOpt(){
 }
 
 int Simplex::col_pivot(){
-    float menor = A[0][0];
-    int col = 0;
+    long double menor = std::numeric_limits<long double>::infinity();
+    int col;
     for(int i = 0; i < A[0].size(); i++){
-        if(A[0][i] < menor){
+        if(A[0][i] < menor && abs(menor - A[0][i]) > EPSILON){
+            cout << menor - A[0][i] << " ";
             menor = A[0][i];
             col = i;
         }
@@ -54,12 +56,12 @@ int Simplex::col_pivot(){
 }
 
 int Simplex::row_pivot(int col_pivot){
-    float menor  =  std::numeric_limits<float>::infinity();
-    float result;
+    long double menor  =  std::numeric_limits<long double>::infinity();
+    long double result;
     int row;
     for(int i = 1; i < B.size(); i++){
         result = abs(B[i]/A[i][col_pivot]);
-        if(result < menor){
+        if(result < menor && abs(menor - result) > EPSILON){
             menor = result;
             row = i;
         }
@@ -68,14 +70,14 @@ int Simplex::row_pivot(int col_pivot){
 }
 
 void Simplex::setPivot(int row_pivot, int col_pivot){
-    float pivot = A[row_pivot][col_pivot];
+    long double pivot = A[row_pivot][col_pivot];
     /*for(int i = 0; i < rows; i++){
         if(i != row_pivot)
             A[i][col_pivot] = 0;
     }*/
 
     for(int i = 0; i < cols; i++){
-        A[row_pivot][i] =  A[row_pivot][i] / pivot;
+        A[row_pivot][i] = A[row_pivot][i] / pivot;
     }
 
     B[row_pivot] = B[row_pivot] / pivot;
@@ -83,7 +85,7 @@ void Simplex::setPivot(int row_pivot, int col_pivot){
 
 
 void Simplex::attMatrix(int row_pivot, int col_pivot){
-    vector<float> coluna_pivot;
+    vector<long double> coluna_pivot;
 
     for(int i = 0; i < rows; i++){
         coluna_pivot.push_back(A[i][col_pivot]);
@@ -104,14 +106,20 @@ void Simplex::attMatrix(int row_pivot, int col_pivot){
 }
 
 void Simplex::calcSimplex(){
+    int i = 0;
     while(optimum != true){
+        if(i == 4)
+            break;
+            print();
             checkOpt();
             if(optimum == true)
                 break;
             int pivot_col = col_pivot();
-            int pivot_row = row_pivot(pivot_col); 
+            int pivot_row = row_pivot(pivot_col);
+            cout << "coluna: " << pivot_col << " linha: " << pivot_row << endl;
             setPivot(pivot_row, pivot_col);
             attMatrix(pivot_row, pivot_col);
+            i++;
         }
 
         print();
@@ -136,35 +144,34 @@ void Simplex::print(){
 
 int main(int argc, char**argv){
 
-    int rows = 4;
-    int cols = 5;
-
-    vector<float> b = {0,4,12,18};
-    float a[4][5] = {
+    /*vector<long double> b = {0,4,12,18};
+    vector<vector<long double>> a = {
                    { -3,  -5,  0, 0, 0},
                    { 1,  0,  1, 0, 0},
                    { 0,  2,  0, 1, 0},
                    { 3,  2,  0, 0, 1}
-                    };
+                    };*/
 
-   /* vector<float> b = {-12,2.7,6,6};
-    float a[4][6] = {
+    /*vector<long double> b = {-12,2.7,6,6};
+    vector<vector<long double>> a = {
                    {-1.1, -0.9,  0, 0, 1, 0},
                    { 0.3,  0.1,  1, 0, 0, 0},
                    { 0.5,  0.5,  0, 1, 0, 0},
                    { 0.6,  0.4,  0, 0, -1, 1}
+                    };*/
+
+    vector<long double> b = {-1200,2.7,6,6};
+    vector<vector<long double>> a = {
+                   { -1.1*100 + 0.4,  -0.9*100 + 0.5,  0, 0, 100, 0},
+                   { 0.3,  0.1,  1, 0, 0 ,0},
+                   { 0.5,  0.5,  0, 1, 0, 0},
+                   { 0.6,  0.4,  0, 0, -1, 1}
                     };
-*/
 
-        std::vector <std::vector<float>> arrayToVector(rows, std::vector<float>(cols, 0));
+        int rows = 4;
+        int cols = 6;
 
-        for(int i = 0 ;i < rows; i++){         
-            for(int j = 0; j < cols; j++){
-                arrayToVector[i][j] = a[i][j];
-            }
-       }
-
-        Simplex simplex(arrayToVector, b);
+        Simplex simplex(a, b);
         simplex.rows = rows;
         simplex.cols = cols;
         //cout << simplex.optimum << endl;
