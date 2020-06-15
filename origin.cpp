@@ -62,10 +62,12 @@ int Simplex::row_pivot(int col_pivot){
     long double result;
     int row;
     for(int i = 1; i < B.size(); i++){
-        result = abs(B[i]/A[i][col_pivot]);
-        if(result < menor && abs(menor - result) > EPSILON){
-            menor = result;
-            row = i;
+        if(A[i][col_pivot] > 0){ // mod funcionou ???
+            result = abs(B[i]/A[i][col_pivot]);
+            if(result < menor && abs(menor - result) > EPSILON){
+                menor = result;
+                row = i;
+            }
         }
     }
     return row;
@@ -290,12 +292,12 @@ int main(int argc, char**argv){
                    { 0.5,  0.5,  0, 1, 0, 0},
                    { 0.6,  0.4,  0, 0, -1, 1}
                     };*/
-    vector<long double> b = {-18000,4,12,18};
+    /*vector<long double> b = {-75000,25,50,45};
     vector<vector<long double>> a = {
-                   { -3-3000, -5-2000, 0, 0, 0},
-                   { 1,  0,  1, 0, 0},
-                   { 0,  2,  0, 1, 0},
-                   { 3,  2,  0, 0, 1}
+                   { -8000-8, -6000-4, 1000, 1000, 0, 0, 0},
+                   { 3,  2,  -1, 0, 0, 1, 0},
+                   { 5,  4,  0, -1, 0, 0, 1},
+                   { 3,  3,  0, 0, 1, 0, 0}
                     };
         int rows = 4;
         int cols = 5;
@@ -304,9 +306,9 @@ int main(int argc, char**argv){
         simplex.cols = cols;
         simplex.n_var = 2;
         simplex.n_constraints = 3; // variaveis de folga + artificiais
-        simplex.calcSimplex();
+        simplex.calcSimplex();*/
 
-      /*  vector<vector<long double>> eq = 
+        /*vector<vector<long double>> eq = 
                    {  // vector coeficientes
                    {3,5}, // função objetivo
                    {1,0}, // restrição 1
@@ -316,7 +318,7 @@ int main(int argc, char**argv){
         vector<long double> c = {4,12,18}; // constantes
         vector<string> operations = {"Min","<=", "<=", "<="};*/
 
-        /* vector<vector<long double>> eq = 
+         vector<vector<long double>> eq = 
                    {  // vector coeficientes
                    {4,5}, // função objetivo
                    {3,1}, // restrição 1
@@ -332,7 +334,7 @@ int main(int argc, char**argv){
       teste.cols = 5;
       teste.n_var = 2;
       teste.n_constraints = 3;
-      teste.calcSimplex();*/
+      teste.calcSimplex();
 
     return 0;
 }

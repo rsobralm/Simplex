@@ -62,11 +62,13 @@ int Simplex::row_pivot(int col_pivot){
     long double result;
     int row;
     for(int i = 1; i < B.size(); i++){
-        result = abs(B[i]/A[i][col_pivot]);
-        if(result < menor && abs(menor - result) > EPSILON){
-            menor = result;
-            row = i;
-        }
+        if(A[i][col_pivot] > 0){
+            result = abs(B[i]/A[i][col_pivot]);
+            if(result < menor && abs(menor - result) > EPSILON){
+                menor = result;
+                row = i;
+            }
+        }    
     }
     return row;
 }
