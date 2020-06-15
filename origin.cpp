@@ -12,15 +12,13 @@ class Simplex{
         //int rows, cols;
         vector <vector<long double>> A;
         vector<long double> B;
-        //vector<long double> C;
-        vector<int> var_basic;
+        vector<long double> C;
+        //bool optimum = false;
+    public:
         int rows, cols;
         int n_var, n_constraints;
+        Simplex(vector <vector<long double>> a, vector<long double> b);
         bool optimum = false;
-        bool type; // 0 = max, 1 = min
-    public:
-        Simplex();
-        void genTableau(vector<vector<long double>> eqs, vector<string> ops, vector<long double> c);
         void checkOpt();
         int col_pivot();
         int row_pivot(int row_pivot);
@@ -30,7 +28,9 @@ class Simplex{
         void print(); 
 };
 
-Simplex::Simplex(){
+Simplex::Simplex(vector <vector<long double>> a, vector<long double> b){
+    A = a;
+    B = b;
 
 }
 
@@ -106,16 +106,16 @@ void Simplex::attMatrix(int row_pivot, int col_pivot){
             B[i] = B[i] - (coluna_pivot[i] * B[row_pivot]);
     }
 
-    var_basic[row_pivot-1] = col_pivot + 1;
+    C[row_pivot-1] = col_pivot + 1;
 }
 
 void Simplex::calcSimplex(){
     int i = 0;
 
-    /*for(int i = n_var+1; i <= cols; i++){
+    for(int i = n_var+1; i <= cols; i++){
         //cout << i << endl;
         C.push_back(i); // vector com o indice das variaveis básicas
-    }*/
+    }
 
 
     while(optimum != true){
@@ -134,20 +134,17 @@ void Simplex::calcSimplex(){
         }
 
         print();
-        if(type == true)
-            B[0] = B[0] * -1;
         cout << "Valor da funçao objetivo: " << B[0] << endl;
        /* for(int i = 1; i < B.size(); i++){
             cout << "x" << i << " = " << B[i] << endl;
         }
-
         for(int i = 0; i < C.size(); i++){
             cout << C[i] << endl;
         }
         */
         for(int i = 1; i < B.size(); i++){
-            if(var_basic[i-1] <= n_var)
-                cout << "x" << var_basic[i-1] << " = " << B[i] << endl;
+            if(C[i-1] <= n_var)
+                cout << "x" << C[i-1] << " = " << B[i] << endl;
         }
 
 }
@@ -165,16 +162,16 @@ void Simplex::print(){
 }
 
 
-void Simplex::genTableau(vector<vector<long double>> eqs, vector<string> ops, vector<long double> c){
-    n_var = eqs[0].size();
-    n_constraints = ops.size() - 1;
+vector<vector<long double>> geraTableau(vector<vector<long double>> eqs, vector<string> ops, vector<long double> &c){
+    int n_variaveis = eqs[0].size();
+    int n_constraints = ops.size() - 1;
 
     long double big_m = 1000;
 
-    //vector<vector<long double>> tableau;
+    vector<vector<long double>> tableau;
     vector<vector<long double>> ident;
     vector<long double> aux (n_constraints,0);
-    //vector<int> var_b_aux (n_constraints, 0); // indices variaveis basicas
+    vector<int> var_basic (n_constraints, 0); // indices variaveis basicas
 
    /* for(int i = 0; i < n_constraints; i++){
         if(ops[0] == "Min")
@@ -184,14 +181,13 @@ void Simplex::genTableau(vector<vector<long double>> eqs, vector<string> ops, ve
     }*/
 
     for(int i = 0; i < n_constraints + 1; i++){
-        A.push_back(eqs[i]); //inicializa tableu com valores fornecidos
+        tableau.push_back(eqs[i]); //inicializa tableu com valores fornecidos
     }
     
-    A[0].insert(A[0].end(), aux.begin(), aux.end()); // completa a primeira linha
+    tableau[0].insert(tableau[0].end(), aux.begin(), aux.end()); // completa a primeira linha
 
     for(int i = 0; i < n_constraints; i++){
         ident.push_back(aux);  //aloca matriz identidade
-        var_basic.push_back(0); // aloca vector indice variaveis
     }
     
     for(int i = 0; i < n_constraints; i++){
@@ -204,104 +200,67 @@ void Simplex::genTableau(vector<vector<long double>> eqs, vector<string> ops, ve
     }
 
     for(int i = 1; i < n_constraints + 1; i++){
-        A[i].insert(A[i].end(), ident[i-1].begin(), ident[i-1].end()); //concatena a matriz identidade ao tableau
+        tableau[i].insert(tableau[i].end(), ident[i-1].begin(), ident[i-1].end()); //concatena a matriz identidade ao tableau
     }
 
-    if(ops[0] == "Min")
-        type = true;
-    else
-        type = false;
 
-    if(ops[0] == "Max"){ // inverte o sinal da func objetivo
-        for(int i = 0; i < n_var; i++){
-            if(A[0][i] != 0)
-                A[0][i] = A[0][i] * -1;
+    /*if(ops[0] == "Min"){ // inverte o sinal da func objetivo
+        for(int i = 0; i < tableau[0].size(); i++){
+            if(tableau[0][i] != 0)
+                tableau[0][i] = tableau[0][i] * -1;
         }
-    }
+    }*/
 
     for(int i = 1; i < ops.size(); i++){
         
         if(ops[i] == "="){
-            A[0][n_var + i - 1] = big_m;   
+            tableau[0][n_variaveis + i - 1] = big_m;
         }
-
-
         if(ops[i] == ">="){
-                //A[0][n_variaveis + i - 1] = big_m;
-                //cout << i << " " << n_variaveis + i << endl;
-                A[i][n_var + i - 1] = -1;
-                for(int j = 0; j < A.size(); j++){
-                    if(j == i)
-                        A[j].push_back(1);
-                    else
-                        A[j].push_back(0);
-                }
-                A[0][n_var + i] = big_m;
+            //tableau[0][n_variaveis + i - 1] = big_m;
+            //cout << i << " " << n_variaveis + i << endl;
+            tableau[i][n_variaveis + i - 1] = -1;
+            for(int j = 0; j < tableau.size(); j++){
+                if(j == i)
+                    tableau[j].push_back(1);
+                else
+                    tableau[j].push_back(0);
+            }
+            tableau[0][n_variaveis + i] = big_m;
         }
-        
     }
 
-    for(int i = 0; i < A.size(); i++){
-        for(int j = 0; j < A[0].size(); j++){
-            cout << A[i][j] << " ";
-        }
-        cout << "\n";
-    }
-
-
-    for(int i = 1; i < A.size();i++){
-        for(int j = n_var; j < A[0].size(); j++){
-            if(A[i][j] == 1)
+    for(int i = 1; i < tableau.size();i++){
+        for(int j = n_variaveis; j < tableau[0].size(); j++){
+            if(tableau[i][j] == 1)
                 var_basic[i-1] = j+1; // guarda indice das variaveis basicas
         }
     }
-    /*for(int i = n_var; i < A[0].size();i++){
-        if(A[0][i] == 0){
-            var_basic[i-n_var] = i;
-        }
-    }*/
-
-   /* for(int i =0; i < var_basic.size(); i++){
-        cout << var_basic[i] << " "; 
-    }
-    cout << "\n";*/
 
     c.insert(c.begin(),0);
 
-   /* for(int i =0; i < c.size();i++){
-        cout << c[i] << " ";
-    }
-    cout << "\n";*/
-
     for(int i = 0; i < var_basic.size(); i++){
-        if(A[0][var_basic[i]-1] == big_m){
-            for(int j = 0; j < A[0].size(); j++){
-                A[0][j] -= (big_m *(A[i+1][j])); // atualiza a funcao objetivo
+        if(tableau[0][var_basic[i] -1] == big_m){
+            for(int j = 0; j < tableau[0].size(); j++){
+                tableau[0][j] -= (big_m *(tableau[i+1][j])); // atualiza a funcao objetivo
             }
-            //cout << var_basic[i] << endl;
-            cout << c[i+1] << endl;
-            c[0] -= (big_m * c[i+1]);
+            c[0] -= (big_m * c[var_basic[i-1]-1]);
         }
     }
 
-    B = c;
-
-    rows = A.size();
-    cols = A[0].size();
-
-    n_constraints = cols - n_var;
 
 
-    /*for(int i = 0; i < A.size(); i++){
-        for(int j = 0; j < A[0].size(); j++){
-            cout << A[i][j] << " ";
+
+    /*for(int i = 0; i < tableau.size(); i++){
+        for(int j = 0; j < tableau[0].size(); j++){
+            cout << tableau[i][j] << " ";
         }
         cout << "\n";
     }
-
     for(int i = 0; i < c.size();i++){
         cout << c[i] << " ";
     }*/
+    return tableau;
 }
 
 
@@ -324,76 +283,56 @@ int main(int argc, char**argv){
                    { 0.6666,  0,  0, -0.3333, 0.3333}
                     };
     */
-    /*vector<long double> b = {-1200,2.7,6,6};
+  /*  vector<long double> b = {-1200,2.7,6,6};
     vector<vector<long double>> a = {
                    { -1.1*100 + 0.4,  -0.9*100 + 0.5,  0, 0, 100, 0},
                    { 0.3,  0.1,  1, 0, 0 ,0},
                    { 0.5,  0.5,  0, 1, 0, 0},
                    { 0.6,  0.4,  0, 0, -1, 1}
                     };*/
-   /* vector<long double> b = {-12,27,6,6};
+    vector<long double> b = {-18000,4,12,18};
     vector<vector<long double>> a = {
-                   { -11,  -9,  0, 0, 0, 0},
-                   { 3,  1,  1, 0, 0 ,0},
-                   { 5,  5,  0, 1, 0, 0},
-                   { 6,  4,  0, 0, -1, 1}
+                   { -3-3000, -5-2000, 0, 0, 0},
+                   { 1,  0,  1, 0, 0},
+                   { 0,  2,  0, 1, 0},
+                   { 3,  2,  0, 0, 1}
                     };
-
-
         int rows = 4;
-        int cols = 6;
-
+        int cols = 5;
         Simplex simplex(a, b);
         simplex.rows = rows;
         simplex.cols = cols;
         simplex.n_var = 2;
-        simplex.n_constraints = 4; // variaveis de folga + artificiais
-        //simplex.calcSimplex();*/
+        simplex.n_constraints = 3; // variaveis de folga + artificiais
+        simplex.calcSimplex();
 
-       vector<vector<long double>> eq = 
+      /*  vector<vector<long double>> eq = 
                    {  // vector coeficientes
-                   {3, 5}, // função objetivo
-                   {1, 0}, // restrição 1
-                   {0, 2}, // restrição 2
-                   {3, 2}  // restrição 3
+                   {3,5}, // função objetivo
+                   {1,0}, // restrição 1
+                   {0,2}, // restrição 2
+                   {3,2}  // restrição 3
                     };
         vector<long double> c = {4,12,18}; // constantes
-        vector<string> operations = {"Max","<=", "<=", "="};
+        vector<string> operations = {"Min","<=", "<=", "<="};*/
 
         /* vector<vector<long double>> eq = 
                    {  // vector coeficientes
-                   {10,5}, // função objetivo
-                   {3,2}, // restrição 1
-                   {2,3}, // restrição 2
-                   {3,6}  // restrição 3
+                   {4,5}, // função objetivo
+                   {3,1}, // restrição 1
+                   {5,5}, // restrição 2
+                   {6,4}  // restrição 3
                     };
-        vector<long double> c = {5,6,10}; // constantes
-        vector<string> operations = {"Min","=", "<=", ">="};*/
+        vector<long double> c = {27,6,6}; // constantes
+        vector<string> operations = {"Min","<=", "=", ">="};
 
-         /*vector<vector<long double>> eq = 
-                   {  // vector coeficientes
-                   {8, 4}, // função objetivo
-                   {3, 2}, // restrição 1
-                   {5, 4}, // restrição 2  
-                   {3, 3}
-                    };
-        vector<long double> c = {25,50,45}; // constantes
-        vector<string> operations = {"Max",">=", ">=", "<="};*/
-
-
-        Simplex simplex;
-        simplex.genTableau(eq,operations,c);
-        simplex.calcSimplex();
-
-
-
-      //vector<vector<long double>> tab = geraTableau(eq,operations,c);
-      //Simplex teste(tab,c);
-      //teste.rows = 4;
-      //teste.cols = 6;
-      //teste.n_var = 2;
-      //teste.n_constraints = 4;
-      //teste.calcSimplex();
+      vector<vector<long double>> tab = geraTableau(eq,operations,c);
+      Simplex teste(tab,c);
+      teste.rows = 4;
+      teste.cols = 5;
+      teste.n_var = 2;
+      teste.n_constraints = 3;
+      teste.calcSimplex();*/
 
     return 0;
 }
