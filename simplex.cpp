@@ -221,8 +221,8 @@ void Simplex::genTableau(vector<vector<long double>> eqs, vector<string> ops, ve
         }
     }
 
+
     for(int i = 1; i < ops.size(); i++){
-        
         if(ops[i] == "="){
             A[0][n_var + i - 1] = big_m;   
         }
@@ -233,12 +233,17 @@ void Simplex::genTableau(vector<vector<long double>> eqs, vector<string> ops, ve
                 //cout << i << " " << n_variaveis + i << endl;
                 A[i][n_var + i - 1] = -1;
                 for(int j = 0; j < A.size(); j++){
-                    if(j == i)
+                    if(j == i){
                         A[j].push_back(1);
+                    }
                     else
-                        A[j].push_back(0);
+                        if(j == 0)
+                            A[j].push_back(big_m);
+                        else
+                            A[j].push_back(0);
                 }
-                A[0][n_var + i] = big_m;
+                //A[0][n_var + i - 1] = 0; //still wrong but works, why?
+               // A[0][n_var + i] = big_m; // TEM Q PULAR UM (3_x1 + 4_x2 - x3 + /x4)
         }
         
     }
@@ -352,7 +357,7 @@ int main(int argc, char**argv){
         simplex.n_constraints = 4; // variaveis de folga + artificiais
         //simplex.calcSimplex();*/
 
-       vector<vector<long double>> eq = 
+      /* vector<vector<long double>> eq = 
                    {  // vector coeficientes
                    {3, 5}, // função objetivo
                    {1, 0}, // restrição 1
@@ -360,7 +365,7 @@ int main(int argc, char**argv){
                    {3, 2}  // restrição 3
                     };
         vector<long double> c = {4,12,18}; // constantes
-        vector<string> operations = {"Max","<=", "<=", "="};
+        vector<string> operations = {"Max","<=", "<=", "="};*/
 
         /* vector<vector<long double>> eq = 
                    {  // vector coeficientes
@@ -372,7 +377,7 @@ int main(int argc, char**argv){
         vector<long double> c = {5,6,10}; // constantes
         vector<string> operations = {"Min","=", "<=", ">="};*/
 
-         /*vector<vector<long double>> eq = 
+        /* vector<vector<long double>> eq = 
                    {  // vector coeficientes
                    {8, 4}, // função objetivo
                    {3, 2}, // restrição 1
