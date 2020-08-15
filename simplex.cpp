@@ -12,10 +12,11 @@ class Simplex{
         //int rows, cols;
         vector <vector<long double>> A;
         vector<long double> B;
+        vector<long double> vectorObj;
         //vector<long double> C;
         vector<int> var_basic;
         int rows, cols;
-        int n_var, n_constraints;
+        int n_var, n_constraints, n_const;
         bool optimum = false;
         bool type; // 0 = max, 1 = min
     public:
@@ -28,6 +29,8 @@ class Simplex{
         void attMatrix(int row_pivot, int col_pivot);
         void calcSimplex();
         void print(); 
+        void analise();
+        void dual(vector<vector<long double>> eqs, vector<string> ops, vector<long double> c);
 };
 
 Simplex::Simplex(){
@@ -121,8 +124,8 @@ void Simplex::calcSimplex(){
 
 
     while(optimum != true){
-        if(i == 4)
-            break;
+        /*if(i == 4)
+            break;*/
             print();
             checkOpt();
             if(optimum == true)
@@ -151,6 +154,115 @@ void Simplex::calcSimplex(){
             if(var_basic[i-1] <= n_var)
                 cout << "x" << var_basic[i-1] << " = " << B[i] << endl;
         }
+
+        analise();
+
+}
+
+void Simplex::analise(){
+    // b = S* dB + b* >= 0  
+    long double deltaB[n_const][n_const] = {};
+    /*for(int i = 1; i < A.size(); i++){
+        for(int j = n_var; j < A[0].size(); j++){
+            deltaB[i][j] = -B[i]/A[i][j];
+        }
+    }*/
+
+    for(int i = 0; i < n_const; i++){
+        for(int j = 0; j < n_const; j++){
+            deltaB[i][j] = (-B[j+1])/(A[1+j][n_var + i]);
+        }
+    }
+
+    for(int i = 0; i < n_const; i++){
+        long double maior = std::numeric_limits<long double>::infinity() * -1;
+        long double menor = std::numeric_limits<long double>::infinity(); 
+        for(int j = 0; j < n_const; j++){
+         //cout << deltaB[i][j] << " ";
+         if(deltaB[i][j] < 0 && deltaB[i][j] > maior && A[1+j][n_var+i] != 0){
+             maior = deltaB[i][j];
+             //cout << "restrição " << i+1 << " decrease: " << delta[i][j] * -1 << endl;
+         }
+         if(deltaB[i][j] > 0 && deltaB[i][j] < menor){
+             menor = deltaB[i][j];
+             //cout << "restrição " << i+1 << " increase: " << delta[i][j]<< endl;
+         }
+         
+    }
+    cout << "restrição " << i+1 << " decrease: " << abs(maior) << endl;
+    cout << "restrição " << i+1 << " increase: " << abs(menor) << endl;
+    cout << "\n";
+    }
+
+}
+
+void Simplex::dual(vector<vector<long double>> eqs, vector<string> ops, vector<long double> c){
+    vector<long double> dual_objective;
+    vector<long double> dual_B;
+    char operation[4];
+    long double matrix_dual[eqs[0].size()][ops.size()-1] = {};
+
+    for(int i = 0; i < eqs[0].size(); i++){
+        dual_B.push_back(eqs[0][i]);
+    }
+
+    cout << "\nDual:\n";
+
+    if(ops[0] == "Min")
+        char operation[4] = "Max";   
+    else
+        char operation[4] = "Min";
+
+    cout << "F.O: " << operation << " ";
+    for(int i = 0; i < eqs.size()-1; i++ ){
+        dual_objective.push_back(c[i]);
+        cout << c[i] << " ";
+    }
+    cout << "\nconstraints: " << endl;
+
+    for(int i = 0; i < eqs[0].size(); i++){
+        for(int j = 1; j < ops.size(); j++){
+            matrix_dual[i][j] = eqs[j][i];
+        }
+        
+    }
+
+
+
+
+    for(int i = 0; i < eqs[0].size(); i++){
+        for(int j = 1; j < ops.size(); j++){
+            cout << matrix_dual[i][j] << " ";
+        }
+        cout << ">= " << dual_B[i] << endl; // considerando apenas x >= 0
+    }
+
+    for(int i = 0 ; i < dual_objective.size(); i++){
+        cout << vectorObj[n_var+i] << " ";
+    }
+
+    long double sol = 0;
+    for(int i = 0 ; i < dual_objective.size(); i++){
+        if(vectorObj[n_var+i] != 1000)
+            sol += dual_objective[i]*A[0][n_var+i];
+        else
+            sol += dual_objective[i]*(A[0][n_var+i] - 1000);
+    }
+
+
+    cout << "\n\nSolucao Dual: " << sol << endl;
+    for(int i = 0; i < dual_objective.size(); i++){
+        if(vectorObj[n_var+i] != 1000)
+            cout << "y_" << i+1 << " = " << A[0][n_var+i] << endl;
+        else
+            cout << "y_" << i+1 << " = " << A[0][n_var+i] - 1000 << endl;
+    }
+
+
+
+
+
+
 
 }
 
@@ -214,7 +326,7 @@ void Simplex::genTableau(vector<vector<long double>> eqs, vector<string> ops, ve
     else
         type = false;
 
-    if(ops[0] == "Max"){ // inverte o sinal da func objetivo
+    if(ops[0] == "Max"){ 
         for(int i = 0; i < n_var; i++){
             if(A[0][i] != 0)
                 A[0][i] = A[0][i] * -1;
@@ -242,8 +354,8 @@ void Simplex::genTableau(vector<vector<long double>> eqs, vector<string> ops, ve
                         else
                             A[j].push_back(0);
                 }
-                //A[0][n_var + i - 1] = 0; //still wrong but works, why?
-               // A[0][n_var + i] = big_m; // TEM Q PULAR UM (3_x1 + 4_x2 - x3 + /x4)
+                //A[0][n_var + i - 1] = 0; 
+               // A[0][n_var + i] = big_m; /
         }
         
     }
@@ -255,6 +367,7 @@ void Simplex::genTableau(vector<vector<long double>> eqs, vector<string> ops, ve
         cout << "\n";
     }
 
+    vectorObj = A[0]; 
 
     for(int i = 1; i < A.size();i++){
         for(int j = n_var; j < A[0].size(); j++){
@@ -272,6 +385,7 @@ void Simplex::genTableau(vector<vector<long double>> eqs, vector<string> ops, ve
         cout << var_basic[i] << " "; 
     }
     cout << "\n";*/
+    n_const = c.size();
 
     c.insert(c.begin(),0);
 
@@ -357,7 +471,7 @@ int main(int argc, char**argv){
         simplex.n_constraints = 4; // variaveis de folga + artificiais
         //simplex.calcSimplex();*/
 
-      /* vector<vector<long double>> eq = 
+       vector<vector<long double>> eq = 
                    {  // vector coeficientes
                    {3, 5}, // função objetivo
                    {1, 0}, // restrição 1
@@ -365,17 +479,18 @@ int main(int argc, char**argv){
                    {3, 2}  // restrição 3
                     };
         vector<long double> c = {4,12,18}; // constantes
-        vector<string> operations = {"Max","<=", "<=", "="};*/
-
-        /* vector<vector<long double>> eq = 
+        vector<string> operations = {"Max","<=", "<=", "<="}; // opt = 36, x1 = 2, x2 = 6
+        
+       
+      /*  vector<vector<long double>> eq = 
                    {  // vector coeficientes
-                   {10,5}, // função objetivo
-                   {3,2}, // restrição 1
-                   {2,3}, // restrição 2
-                   {3,6}  // restrição 3
+                   {0.4,0.5}, // função objetivo
+                   {0.3,0.1}, // restrição 1
+                   {0.5,0.5}, // restrição 2
+                   {0.6,0.4}  // restrição 3
                     };
-        vector<long double> c = {5,6,10}; // constantes
-        vector<string> operations = {"Min","=", "<=", ">="};*/
+        vector<long double> c = {2.7,6,6}; // constantes
+        vector<string> operations = {"Min","<=", "=", ">="}; */
 
         /* vector<vector<long double>> eq = 
                    {  // vector coeficientes
@@ -387,10 +502,30 @@ int main(int argc, char**argv){
         vector<long double> c = {25,50,45}; // constantes
         vector<string> operations = {"Max",">=", ">=", "<="};*/
 
+        /*  vector<vector<long double>> eq = 
+                   {  // vector coeficientes
+                   {1, -1, 2, 3}, // função objetivo
+                   {1, -1, -1, 0}, // restrição 1
+                   {0, 0, 1, 1}, // restrição 2  
+                   {-1, 1, 0, 1}
+                    };
+        vector<long double> c = {0,2,0}; // constantes
+        vector<string> operations = {"Max",">=", "<=", "="}; // opt = 8, x1 = 2, x2 = 0, x3 = 0, x4 = 2 
+        */
+         /*vector<vector<long double>> eq = 
+                   {  // vector coeficientes
+                   {2, 1}, // função objetivo
+                   {1, 1}, // restrição 1
+                   {1, 1} // restrição 2  
+                    };
+        vector<long double> c = {2,4}; // constantes
+        vector<string> operations = {"Max",">=", "<="};*/
+
 
         Simplex simplex;
         simplex.genTableau(eq,operations,c);
         simplex.calcSimplex();
+        simplex.dual(eq,operations,c);
 
 
 
